@@ -59,12 +59,12 @@ st.title("Level 1 Tech Support Toolkit")
 # 1. Identity & Verification
 if tool == "Identity & Verification":
     st.header("🔐 Identity & Verification")
-    st.page_link("https://my.hostafrica.com/admin/", label="Open HostAfrica Admin Tool", icon="🔑")
+    st.page_link("https://my.hostafrica.com/admin/admin_tool/client-pin", label="Open HostAfrica Admin Tool", icon="🔑")
 
 # 2. IP Unban Tool
 elif tool == "Client Area IP Unban Tool":
     st.header("🔓 Client Area IP Unban")
-    st.page_link("https://my.hostafrica.com/clientarea.php?action=bulkdomain", label="Go to IP Unban Tool", icon="🛡️")
+    st.page_link("https://my.hostafrica.com/admin/custom/scripts/unban/", label="Go to IP Unban Tool", icon="🛡️")
 
 # 3. DNS Records
 elif tool == "DNS Records":
@@ -78,7 +78,7 @@ elif tool == "DNS Records":
 # 4. Domain WHOIS Check (INTEGRATED NEW LOGIC)
 elif tool == "Domain WHOIS Check":
     st.header("🌐 Domain WHOIS Lookup")
-    domain = st.text_input("Enter domain name (e.g., hostafrica.com):").strip().lower()
+    domain = st.text_input("Enter domain name (e.g., example.com):").strip().lower()
     
     if domain:
         # Initialize reporting lists
