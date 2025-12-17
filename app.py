@@ -419,17 +419,108 @@ elif tool == "Nameserver Bulk Updater":
 # 9. SSL Check
 elif tool == "SSL Check":
     st.header("🔒 SSL Certificate Check")
-    domain_ssl = st.text_input("Enter domain (e.g., hostafrica.com):").strip().lower()
-    if domain_ssl:
-        try:
-            context = ssl.create_default_context()
-            with socket.create_connection((domain_ssl, 443), timeout=5) as sock:
-                with context.wrap_socket(sock, server_hostname=domain_ssl) as ssock:
-                    cert = ssock.getpeercert()
-                    st.success(f"✅ SSL Valid for {domain_ssl}")
-                    st.json(cert)
-        except Exception as e:
-            st.error(f"SSL Check Failed: {e}")
+    domain = st.text_input("Enter domain (without https://):", placeholder="example.com")
+    if st.button("Check SSL Certificate"):
+        if domain:
+            domain = domain.replace('https://', '').replace('http://', '').replace('www.', '').split('/')[0].strip()
+            
+            with st.spinner(f"Analyzing SSL certificate for {domain}..."):
+                try:
+                    context = ssl.create_default_context()
+                    with socket.create_connection((domain, 443), timeout=10) as sock:
+                        with context.wrap_socket(sock, server_hostname=domain) as secure_sock:
+                            cert = secure_sock.getpeercert()
+                            
+                            st.success(f"✅ SSL Certificate found and valid for {domain}")
+                            
+                            col1, col2 = st.columns(2)
+                            
+                            with col1:
+                                st.subheader("📋 Certificate Details")
+                                
+                                subject = dict(x[0] for x in cert['subject'])
+                                st.write("**Issued To:**", subject.get('commonName', 'N/A'))
+                                
+                                issuer = dict(x[0] for x in cert['issuer'])
+                                st.write("**Issued By:**", issuer.get('commonName', 'N/A'))
+                                st.write("**Organization:**", issuer.get('organizationName', 'N/A'))
+                                
+                            with col2:
+                                st.subheader("📅 Validity Period")
+                                
+                                not_before = cert.get('notBefore')
+                                not_after = cert.get('notAfter')
+                                
+                                st.write("**Valid From:**", not_before)
+                                st.write("**Valid Until:**", not_after)
+                                
+                                if not_after:
+                                    try:
+                                        expiry_date = datetime.strptime(not_after, '%b %d %H:%M:%S %Y %Z')
+                                        days_remaining = (expiry_date - datetime.now()).days
+                                        
+                                        if days_remaining > 30:
+                                            st.success(f"✅ **{days_remaining} days** remaining")
+                                        elif days_remaining > 0:
+                                            st.warning(f"⚠️ **{days_remaining} days** remaining - Renew soon!")
+                                        else:
+                                            st.error(f"❌ Certificate expired {abs(days_remaining)} days ago")
+                                    except:
+                                        pass
+                            
+                            if 'subjectAltName' in cert:
+                                st.subheader("🌐 Subject Alternative Names")
+                                sans = [san[1] for san in cert['subjectAltName']]
+                                
+                                for san in sans[:10]:
+                                    st.code(san)
+                                
+                                if len(sans) > 10:
+                                    st.info(f"...and {len(sans) - 10} more domain(s)")
+                            
+                            with st.expander("🔍 View Certificate Summary"):
+                                summary = {
+                                    'Common Name': subject.get('commonName', 'N/A'),
+                                    'Issuer': issuer.get('commonName', 'N/A'),
+                                    'Issuer Organization': issuer.get('organizationName', 'N/A'),
+                                    'Valid From': not_before,
+                                    'Valid Until': not_after,
+                                    'Serial Number': cert.get('serialNumber', 'N/A'),
+                                    'Version': cert.get('version', 'N/A'),
+                                    'Total SANs': len(sans) if 'subjectAltName' in cert else 0
+                                }
+                                
+                                for key, value in summary.items():
+                                    st.text(f"{key}: {value}")
+                                
+                                st.divider()
+                                
+                                with st.expander("📄 Show Technical/Raw Certificate Data"):
+                                    st.json(cert)
+                                
+                except socket.gaierror:
+                    st.error(f"❌ Could not resolve domain: {domain}")
+                    st.info("💡 Make sure the domain name is correct and accessible")
+                    
+                except socket.timeout:
+                    st.error(f"⏱️ Connection timeout for {domain}")
+                    st.info("💡 The server might be slow or blocking connections")
+                    
+                except ssl.SSLError as ssl_err:
+                    st.error(f"❌ SSL Error: {str(ssl_err)}")
+                    st.warning("""
+                    **Common SSL Issues:**
+                    - Certificate has expired
+                    - Certificate is self-signed
+                    - Certificate name doesn't match domain
+                    - Incomplete certificate chain
+                    """)
+                    
+                except Exception as e:
+                    st.error(f"❌ Error checking SSL: {str(e)}")
+                    st.info(f"💡 Try checking manually at: https://www.ssllabs.com/ssltest/analyze.html?d={domain}")
+        else:
+            st.warning("⚠️ Please enter a domain name")
 
 # 10. HostAfrica Knowledgebase
 elif tool == "HostAfrica Knowledgebase":
