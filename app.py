@@ -33,7 +33,7 @@ with st.sidebar.expander("📋 Support Checklist", expanded=True):
     st.info("Use the **Domain Check** tool for cPanel")
     st.page_link("https://my.hostafrica.com/admin/custom/scripts/custom_tests/listaccounts.php", label="cPanel Account Checker", icon="📂")
     st.info("Use the **Nameserver** Bulk Updater")
-    st.page_link("https://my.hostafrica.com/admin/addonmodules.php?module=nameserver_changer", label="Bulk Nameserver Changer", icon="🔄")
+    st.page_link("https://my.hostafrica.com/admin/addonmodules.php?module=nameserv_changer", label="Bulk Nameserver Changer", icon="🔄")
     
     st.markdown("---")
     st.markdown("### 3. Connection & IP")
