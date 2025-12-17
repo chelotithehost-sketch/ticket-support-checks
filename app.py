@@ -65,113 +65,89 @@ if tool == "Identity & Verification":
 elif tool == "Client Area IP Unban Tool":
     st.header("🔓 Client Area IP Unban")
     st.page_link("https://my.hostafrica.com/admin/custom/scripts/unban/", label="Go to IP Unban Tool", icon="🛡️")
-
-# 3. DNS Records (INTEGRATED COMPREHENSIVE LOGIC)
+    
+# 3. DNS Records
 elif tool == "DNS Records":
     st.header("🗂️ DNS Record Analyzer")
-    st.markdown("Check domain resolution, DNS configuration, and nameserver status.")
+    st.markdown("Comprehensive check of resolution, mail routing, and authentication records.")
     
     
-    domain_dns = st.text_input("Enter domain:", placeholder="example.com")
+
+    domain_dns = st.text_input("Enter domain (e.g. hostafrica.com):", key="dns_input")
     
     if domain_dns:
         domain_dns = domain_dns.strip().lower()
         
-        with st.spinner(f"Analyzing DNS for {domain_dns}..."):
-            # Initialize status tracking for the summary report
-            issues = []
-            warnings = []
-            success_checks = []
+        with st.spinner(f"Analyzing all DNS records for {domain_dns}..."):
+            issues, warnings, success_checks = [], [], []
             
-            # --- 1. DNS Resolution Check (A & AAAA) ---
-            st.subheader("🔍 DNS Resolution Status")
-            try:
-                # Check A Records
-                response = requests.get(f"https://dns.google/resolve?name={domain_dns}&type=A", timeout=5)
-                data = response.json()
+            # --- A & AAAA RECORDS ---
+            st.subheader("🌐 Web Resolution (A/AAAA)")
+            a_res = requests.get(f"https://dns.google/resolve?name={domain_dns}&type=A").json()
+            if a_res.get('Answer'):
+                for r in a_res['Answer']: st.code(f"A: {r['data']}")
+                success_checks.append("A record found")
+            else:
+                issues.append("Missing A record (Website won't load)")
+                st.error("❌ No A records found.")
+
+            # --- MX RECORDS (Mail) ---
+            st.subheader("📧 Mail Server Records (MX)")
+            mx_res = requests.get(f"https://dns.google/resolve?name={domain_dns}&type=MX").json()
+            if mx_res.get('Answer'):
+                for r in mx_res['Answer']: st.code(f"MX: {r['data']}")
+                success_checks.append("MX records configured")
+            else:
+                issues.append("No MX records (Cannot receive email)")
+                st.error("❌ No MX records found. Client cannot receive emails.")
+
+            # --- CNAME RECORDS ---
+            st.subheader("🔗 Alias Records (CNAME)")
+            # Checking 'www' by default as it's the most common support query
+            cname_res = requests.get(f"https://dns.google/resolve?name=www.{domain_dns}&type=CNAME").json()
+            if cname_res.get('Answer'):
+                for r in cname_res['Answer']: st.code(f"www CNAME: {r['data']}")
+                success_checks.append("www CNAME found")
+            else:
+                st.info("ℹ️ No CNAME found for 'www' (might be using an A record instead).")
+
+            # --- TXT RECORDS (SPF/DKIM/DMARC) ---
+            st.subheader("📝 Text Records (Authentication)")
+            txt_res = requests.get(f"https://dns.google/resolve?name={domain_dns}&type=TXT").json()
+            if txt_res.get('Answer'):
+                found_spf = False
+                for r in txt_res['Answer']:
+                    val = r['data'].strip('"')
+                    st.code(f"TXT: {val}")
+                    if "v=spf1" in val: found_spf = True
                 
-                if data.get('Status') == 0 and data.get('Answer'):
-                    st.success(f"✅ Domain {domain_dns} is resolving")
-                    success_checks.append("DNS resolution working")
-                    
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.write("**A Records (IPv4):**")
-                        for record in data['Answer']:
-                            st.code(record['data'])
-                    
-                    # Check for IPv6 (AAAA)
-                    try:
-                        ipv6_res = requests.get(f"https://dns.google/resolve?name={domain_dns}&type=AAAA", timeout=5).json()
-                        if ipv6_res.get('Answer'):
-                            with col2:
-                                st.write("**AAAA Records (IPv6):**")
-                                for record in ipv6_res['Answer'][:3]:
-                                    st.code(record['data'])
-                    except:
-                        pass
-                        
-                elif data.get('Status') == 3:
-                    st.error("❌ Domain name does not exist (NXDOMAIN)")
-                    issues.append("Domain not registered or expired")
+                if found_spf:
+                    success_checks.append("SPF record found")
                 else:
-                    st.error("❌ Domain not resolving")
-                    issues.append("DNS resolution failed")
-                    
-            except Exception as e:
-                st.error(f"❌ DNS check failed: {str(e)}")
-                issues.append(f"DNS error: {str(e)}")
+                    warnings.append("No SPF record found (Email might go to spam)")
+            else:
+                warnings.append("No TXT records found")
+                st.warning("⚠️ No TXT records. Missing SPF/DMARC will affect email deliverability.")
 
-            # --- 2. Nameserver Check ---
-            st.subheader("🖥️ Nameserver Configuration")
-            try:
-                ns_response = requests.get(f"https://dns.google/resolve?name={domain_dns}&type=NS", timeout=5).json()
-                
-                if ns_response.get('Answer'):
-                    nameservers = [record['data'].rstrip('.') for record in ns_response['Answer']]
-                    
-                    if len(nameservers) >= 2:
-                        st.success(f"✅ Found {len(nameservers)} nameservers")
-                        success_checks.append("Multiple nameservers configured")
-                    else:
-                        st.warning("⚠️ Insufficient nameserver redundancy (found only 1)")
-                        warnings.append("Insufficient nameserver redundancy")
-                    
-                    for ns in nameservers:
-                        st.code(ns)
-                else:
-                    st.error("❌ No authoritative nameservers found")
-                    issues.append("No nameservers configured")
-                    st.warning("**Common causes:** Registrar hold, suspension, or missing NS setup.")
-            except Exception as e:
-                st.error(f"❌ Nameserver check failed: {str(e)}")
+            # --- NAMESERVERS ---
+            st.subheader("🖥️ Nameservers (NS)")
+            ns_res = requests.get(f"https://dns.google/resolve?name={domain_dns}&type=NS").json()
+            if ns_res.get('Answer'):
+                for r in ns_res['Answer']: st.code(f"NS: {r['data'].rstrip('.')}")
+            else:
+                issues.append("No Nameservers found")
 
-            # --- 3. SOA Record Check ---
-            st.subheader("📋 SOA (Start of Authority) Record")
-            try:
-                soa_res = requests.get(f"https://dns.google/resolve?name={domain_dns}&type=SOA", timeout=5).json()
-                if soa_res.get('Answer'):
-                    st.success("✅ SOA record found")
-                    st.code(soa_res['Answer'][0]['data'])
-                    success_checks.append("SOA record configured")
-                else:
-                    st.warning("⚠️ No SOA record found")
-                    warnings.append("Missing SOA record")
-            except Exception as e:
-                st.warning(f"⚠️ Could not check SOA: {str(e)}")
-
-            # --- Summary Report for DNS ---
+            # --- Summary Report ---
             st.divider()
             st.subheader("📊 DNS Health Summary")
-            if not issues and not warnings:
-                st.success("🎉 DNS configuration looks healthy!")
-            else:
-                if issues:
-                    for issue in issues: st.error(f"• {issue}")
-                if warnings:
-                    for warning in warnings: st.warning(f"• {warning}")
+            col_a, col_b = st.columns(2)
+            with col_a:
+                for msg in issues: st.error(f"• {msg}")
+                for msg in warnings: st.warning(f"• {msg}")
+            with col_b:
+                for msg in success_checks: st.success(f"• {msg}")
 
-# 4. Domain WHOIS Check (INTEGRATED NEW LOGIC)
+# 4. Domain WHOIS Check
 elif tool == "Domain WHOIS Check":
     st.header("🌐 Domain WHOIS Lookup")
     domain = st.text_input("Enter domain name (e.g., example.com):").strip().lower()
