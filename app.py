@@ -55,7 +55,7 @@ tool = st.sidebar.radio(
 )
 
 # --- MAIN APP LOGIC ---
-st.title("Level 1 Tech Support Toolkit")
+st.title("Tech Support Toolkit")
 
 # 1. Identity & Verification
 if tool == "Identity & Verification":
