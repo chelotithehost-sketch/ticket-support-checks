@@ -10,27 +10,9 @@ import re
 
 # Page Configuration
 st.set_page_config(
-    page_title="Level 1 Tech Support Toolkit",
+    page_title="Tech Support Toolkit",
     page_icon="🔧",
     layout="wide"
-)
-
-# --- SIDEBAR NAVIGATION ---
-st.sidebar.title("🔧 Support Tools")
-tool = st.sidebar.radio(
-    "Select Tool:",
-    [
-        "Identity & Verification", 
-        "Client Area IP Unban Tool", 
-        "DNS Records", 
-        "Domain WHOIS Check", 
-        "IP Lookup", 
-        "cPanel Hosting Checker", 
-        "My IP Finder", 
-        "Nameserver Bulk Updater", 
-        "SSL Check", 
-        "HostAfrica Knowledgebase"
-    ]
 )
 
 st.sidebar.divider()
@@ -51,7 +33,26 @@ with st.sidebar.expander("📋 Support Checklist", expanded=True):
       - cPanel: ns1-ns4.host-ww.net
       - DirectAdmin: dan1-dan2.host-ww.net
     """)
-    st.page_link("https://developers.google.com/speed/public-dns/cache", label="Flush Google DNS Cache", icon="🧹")
+    st.page_link("https://dns.google/cache", label="Flush Google DNS Cache", icon="🧹")
+
+
+# --- SIDEBAR NAVIGATION ---
+st.sidebar.title("🔧 Support Tools")
+tool = st.sidebar.radio(
+    "Select Tool:",
+    [
+        "Identity & Verification", 
+        "Client Area IP Unban Tool", 
+        "DNS Records", 
+        "Domain WHOIS Check", 
+        "IP Lookup", 
+        "cPanel Hosting Checker", 
+        "My IP Finder", 
+        "Nameserver Bulk Updater", 
+        "SSL Check", 
+        "HostAfrica Knowledgebase"
+    ]
+)
 
 # --- MAIN APP LOGIC ---
 st.title("Level 1 Tech Support Toolkit")
