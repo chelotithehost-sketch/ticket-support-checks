@@ -66,14 +66,110 @@ elif tool == "Client Area IP Unban Tool":
     st.header("🔓 Client Area IP Unban")
     st.page_link("https://my.hostafrica.com/admin/custom/scripts/unban/", label="Go to IP Unban Tool", icon="🛡️")
 
-# 3. DNS Records
+# 3. DNS Records (INTEGRATED COMPREHENSIVE LOGIC)
 elif tool == "DNS Records":
     st.header("🗂️ DNS Record Analyzer")
+    st.markdown("Check domain resolution, DNS configuration, and nameserver status.")
     
-    domain_dns = st.text_input("Enter domain for DNS check:")
+    
+    domain_dns = st.text_input("Enter domain:", placeholder="example.com")
+    
     if domain_dns:
-        st.info(f"Analyzing records for {domain_dns}...")
-        # (DNS lookup logic here)
+        domain_dns = domain_dns.strip().lower()
+        
+        with st.spinner(f"Analyzing DNS for {domain_dns}..."):
+            # Initialize status tracking for the summary report
+            issues = []
+            warnings = []
+            success_checks = []
+            
+            # --- 1. DNS Resolution Check (A & AAAA) ---
+            st.subheader("🔍 DNS Resolution Status")
+            try:
+                # Check A Records
+                response = requests.get(f"https://dns.google/resolve?name={domain_dns}&type=A", timeout=5)
+                data = response.json()
+                
+                if data.get('Status') == 0 and data.get('Answer'):
+                    st.success(f"✅ Domain {domain_dns} is resolving")
+                    success_checks.append("DNS resolution working")
+                    
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.write("**A Records (IPv4):**")
+                        for record in data['Answer']:
+                            st.code(record['data'])
+                    
+                    # Check for IPv6 (AAAA)
+                    try:
+                        ipv6_res = requests.get(f"https://dns.google/resolve?name={domain_dns}&type=AAAA", timeout=5).json()
+                        if ipv6_res.get('Answer'):
+                            with col2:
+                                st.write("**AAAA Records (IPv6):**")
+                                for record in ipv6_res['Answer'][:3]:
+                                    st.code(record['data'])
+                    except:
+                        pass
+                        
+                elif data.get('Status') == 3:
+                    st.error("❌ Domain name does not exist (NXDOMAIN)")
+                    issues.append("Domain not registered or expired")
+                else:
+                    st.error("❌ Domain not resolving")
+                    issues.append("DNS resolution failed")
+                    
+            except Exception as e:
+                st.error(f"❌ DNS check failed: {str(e)}")
+                issues.append(f"DNS error: {str(e)}")
+
+            # --- 2. Nameserver Check ---
+            st.subheader("🖥️ Nameserver Configuration")
+            try:
+                ns_response = requests.get(f"https://dns.google/resolve?name={domain_dns}&type=NS", timeout=5).json()
+                
+                if ns_response.get('Answer'):
+                    nameservers = [record['data'].rstrip('.') for record in ns_response['Answer']]
+                    
+                    if len(nameservers) >= 2:
+                        st.success(f"✅ Found {len(nameservers)} nameservers")
+                        success_checks.append("Multiple nameservers configured")
+                    else:
+                        st.warning("⚠️ Insufficient nameserver redundancy (found only 1)")
+                        warnings.append("Insufficient nameserver redundancy")
+                    
+                    for ns in nameservers:
+                        st.code(ns)
+                else:
+                    st.error("❌ No authoritative nameservers found")
+                    issues.append("No nameservers configured")
+                    st.warning("**Common causes:** Registrar hold, suspension, or missing NS setup.")
+            except Exception as e:
+                st.error(f"❌ Nameserver check failed: {str(e)}")
+
+            # --- 3. SOA Record Check ---
+            st.subheader("📋 SOA (Start of Authority) Record")
+            try:
+                soa_res = requests.get(f"https://dns.google/resolve?name={domain_dns}&type=SOA", timeout=5).json()
+                if soa_res.get('Answer'):
+                    st.success("✅ SOA record found")
+                    st.code(soa_res['Answer'][0]['data'])
+                    success_checks.append("SOA record configured")
+                else:
+                    st.warning("⚠️ No SOA record found")
+                    warnings.append("Missing SOA record")
+            except Exception as e:
+                st.warning(f"⚠️ Could not check SOA: {str(e)}")
+
+            # --- Summary Report for DNS ---
+            st.divider()
+            st.subheader("📊 DNS Health Summary")
+            if not issues and not warnings:
+                st.success("🎉 DNS configuration looks healthy!")
+            else:
+                if issues:
+                    for issue in issues: st.error(f"• {issue}")
+                if warnings:
+                    for warning in warnings: st.warning(f"• {warning}")
 
 # 4. Domain WHOIS Check (INTEGRATED NEW LOGIC)
 elif tool == "Domain WHOIS Check":
