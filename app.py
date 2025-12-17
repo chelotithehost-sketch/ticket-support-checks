@@ -17,7 +17,7 @@ st.set_page_config(
 st.sidebar.title("🔧 Support Tools")
 tool = st.sidebar.radio(
     "Select Tool:",
-    ["Domain Check", "IP Lookup", "DNS Records", "SSL Check"]
+    ["Domain Check", "IP Lookup", "My IP", "DNS Records", "SSL Check"]
 )
 
 st.sidebar.divider()
