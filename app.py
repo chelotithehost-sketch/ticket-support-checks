@@ -314,14 +314,85 @@ elif tool == "Domain WHOIS Check":
 
 # 5. IP Lookup
 elif tool == "IP Lookup":
-    st.header("🔍 IP Address Geo-Lookup")
-    ip_input = st.text_input("Enter IP Address:")
-    if ip_input:
-        res = requests.get(f"https://ipapi.co/{ip_input}/json/").json()
-        if "error" not in res:
-            st.json(res)
+    st.header("🔍 IP Address Lookup")
+    st.markdown("Look up geolocation information for any IP address")
+    
+    ip_input = st.text_input("Enter IP address:", placeholder="8.8.8.8")
+    
+    if st.button("Lookup IP"):
+        if ip_input:
+            with st.spinner(f"Looking up {ip_input}..."):
+                try:
+                    import re
+                    ip_pattern = r'^(\d{1,3}\.){3}\d{1,3}$'
+                    if not re.match(ip_pattern, ip_input):
+                        st.error("❌ Invalid IP address format")
+                    else:
+                        geo_data = None
+                        try:
+                            response = requests.get(f"https://ipapi.co/{ip_input}/json/", timeout=5)
+                            if response.status_code == 200:
+                                geo_data = response.json()
+                        except:
+                            pass
+                        
+                        if not geo_data or geo_data.get('error'):
+                            try:
+                                response = requests.get(f"http://ip-api.com/json/{ip_input}", timeout=5)
+                                if response.status_code == 200:
+                                    fallback_data = response.json()
+                                    if fallback_data.get('status') == 'success':
+                                        geo_data = {
+                                            'ip': ip_input,
+                                            'city': fallback_data.get('city'),
+                                            'region': fallback_data.get('regionName'),
+                                            'country_name': fallback_data.get('country'),
+                                            'postal': fallback_data.get('zip'),
+                                            'latitude': fallback_data.get('lat'),
+                                            'longitude': fallback_data.get('lon'),
+                                            'org': fallback_data.get('isp'),
+                                            'timezone': fallback_data.get('timezone'),
+                                            'asn': fallback_data.get('as')
+                                        }
+                            except:
+                                pass
+                        
+                        if geo_data and not geo_data.get('error'):
+                            st.success(f"✅ Information found for {ip_input}")
+                            
+                            col1, col2, col3 = st.columns(3)
+                            
+                            with col1:
+                                st.metric("🌐 IP Address", ip_input)
+                                st.metric("🏙️ City", geo_data.get('city', 'N/A'))
+                                st.metric("📮 Postal Code", geo_data.get('postal', 'N/A'))
+                            
+                            with col2:
+                                st.metric("🗺️ Region", geo_data.get('region', 'N/A'))
+                                st.metric("🌍 Country", geo_data.get('country_name', 'N/A'))
+                                st.metric("🕐 Timezone", geo_data.get('timezone', 'N/A'))
+                            
+                            with col3:
+                                st.metric("📡 ISP/Organization", geo_data.get('org', 'N/A'))
+                                if geo_data.get('latitude') and geo_data.get('longitude'):
+                                    st.metric("📍 Coordinates", f"{geo_data['latitude']:.4f}, {geo_data['longitude']:.4f}")
+                                if geo_data.get('asn'):
+                                    st.metric("🔢 ASN", geo_data.get('asn', 'N/A'))
+                            
+                            if geo_data.get('latitude') and geo_data.get('longitude'):
+                                map_url = f"https://www.google.com/maps?q={geo_data['latitude']},{geo_data['longitude']}"
+                                st.markdown(f"🗺️ [View on Google Maps]({map_url})")
+                            
+                            with st.expander("🔍 View Full Details"):
+                                st.json(geo_data)
+                        else:
+                            st.error("❌ Could not retrieve information for this IP address")
+                            st.info("The IP might be private, invalid, or the service is unavailable")
+                            
+                except Exception as e:
+                    st.error(f"Error: {str(e)}")
         else:
-            st.error("Invalid IP.")
+            st.warning("⚠️ Please enter an IP address")
 
 # 6. cPanel Hosting Checker
 elif tool == "cPanel Hosting Checker":
