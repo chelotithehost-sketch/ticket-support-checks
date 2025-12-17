@@ -8,7 +8,7 @@ import whois
 from whois import exceptions
 
 st.set_page_config(
-    page_title="Level 1 Tech Support Toolkit",
+    page_title="Tech Support Toolkit",
     page_icon="🔧",
     layout="wide"
 )
@@ -25,25 +25,22 @@ st.sidebar.divider()
 # --- IMPROVED SUPPORT CHECKLIST ---
 with st.sidebar.expander("📋 Support Checklist", expanded=True):
     st.markdown("### 1. Identity & Verification")
-    st.page_link("https://my.hostafrica.com/admin/", label="Client PIN: HostAfrica Admin", icon="🔐")
+    st.page_link("https://my.hostafrica.com/admin/admin_tool/client-pin", label="Client PIN: HostAfrica Admin", icon="🔐")
     st.page_link("https://help.hostafrica.com", label="HostAfrica Help Center", icon="📚")
-    st.page_link("https://my.hostafrica.com/clientarea.php", label="HostAfrica Client Area", icon="👤")
     
     st.markdown("---")
-    st.markdown("### 2. Domain & DNS")
-    st.info("Use the **Domain Check** tool below for WHOIS")
+    st.markdown("### 2. cPanel Hosting Checker")
+    st.info("Use the **Domain Check** tool for cPanel")
     st.page_link("https://my.hostafrica.com/admin/custom/scripts/custom_tests/listaccounts.php", label="cPanel Account Checker", icon="📂")
+    st.info("Use the **Nameserver** Bulk Updater")
     st.page_link("https://my.hostafrica.com/admin/addonmodules.php?module=nameserver_changer", label="Bulk Nameserver Changer", icon="🔄")
     
     st.markdown("---")
     st.markdown("### 3. Connection & IP")
-    st.page_link("https://my.hostafrica.com/index.php?m=ip_unban", label="IP Unban Tool", icon="🔓")
-    st.page_link("https://developers.google.com/speed/public-dns/cache", label="Flush Google DNS Cache", icon="🧹")
+    st.page_link("https://my.hostafrica.com/admin/custom/scripts/unban/", label="IP Unban Tool", icon="🔓")
+    st.page_link("https://dns.google/cache", label="Flush Google DNS Cache", icon="🧹")
 
 st.sidebar.divider()
-
-# Updated HostAfrica IP Redirection
-st.sidebar.link_button("🌐 My Public IP", "https://ip.hostafrica.com", use_container_width=True)
 
 # Main App Logic
 st.title("Level 1 Tech Support Toolkit")
@@ -75,6 +72,69 @@ if tool == "Domain Check":
                     
         except Exception as e:
             st.error(f"Error fetching WHOIS: {e}")
+            
+elif tool == "My IP":
+    st.header("📍 Find My IP Address")
+    st.markdown("Discover your public IP address and network information")
+    
+    st.info("💡 Click the button below to open a new tab that will show your real public IP address")
+    
+    st.markdown("""
+    <div style="text-align: center; padding: 20px;">
+        <a href="https://ip.hostafrica.com/" target="_blank" style="
+            display: inline-block;
+            padding: 15px 40px;
+            background-color: #FF4B4B;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        ">
+            🔍 Get My IP Address
+        </a>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown("""
+    <div style="text-align: center; margin-top: 10px; color: #666;">
+        <small>Click the button above to open a trusted IP detection site in a new tab</small>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.divider()
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("""
+        **What this does:**
+        - Opens a trusted IP detection site
+        - Shows your real public IP address
+        - No server-side detection needed
+        """)
+    
+    with col2:
+        st.markdown("""
+        **Alternative Sites:**
+        - [IPChicken.com](https://ipchicken.com/)
+        - [IPInfo.io](https://ipinfo.io/)
+        - [ICanHazIP.com](https://icanhazip.com/)
+        """)
+    
+    st.divider()
+    
+    st.subheader("🔎 Already know your IP?")
+    st.markdown("Copy your IP address from the opened tab and use the **IP Lookup** tool in the sidebar to get detailed information about it!")
+    
+    st.markdown("""
+    ### Quick Steps:
+    1. ✅ Click "Get My IP Address" button above
+    2. ✅ Copy your IP address from the opened page
+    3. ✅ Go to **IP Lookup** tool (in sidebar)
+    4. ✅ Paste your IP and click "Lookup IP"
+    """)
 
 elif tool == "IP Lookup":
     st.header("🔍 IP Address Lookup")
@@ -85,6 +145,7 @@ elif tool == "IP Lookup":
             st.json(response)
         else:
             st.error("Invalid IP or API limit reached.")
+
 
 elif tool == "DNS Records":
     st.header("🗂️ DNS Record Analyzer")
