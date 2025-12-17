@@ -27,15 +27,11 @@ with st.sidebar.expander("📋 Support Checklist", expanded=True):
     st.markdown("### 1. Identity & Verification")
     st.page_link("https://my.hostafrica.com/admin/admin_tool/client-pin", label="Client PIN: HostAfrica Admin", icon="🔐")
     st.page_link("https://help.hostafrica.com", label="HostAfrica Help Center", icon="📚")
-    
-    st.markdown("---")
     st.markdown("### 2. cPanel Hosting Checker")
     st.info("Use the **Domain Check** tool for cPanel")
     st.page_link("https://my.hostafrica.com/admin/custom/scripts/custom_tests/listaccounts.php", label="cPanel Account Checker", icon="📂")
     st.info("Use the **Nameserver** Bulk Updater")
     st.page_link("https://my.hostafrica.com/admin/addonmodules.php?module=nameserv_changer", label="Bulk Nameserver Changer", icon="🔄")
-    
-    st.markdown("---")
     st.markdown("### 3. Connection & IP")
     st.page_link("https://my.hostafrica.com/admin/custom/scripts/unban/", label="IP Unban Tool", icon="🔓")
     st.page_link("https://dns.google/cache", label="Flush Google DNS Cache", icon="🧹")
