@@ -6,169 +6,183 @@ import socket
 import ssl
 import whois
 from whois import exceptions
+import re
 
+# Page Configuration
 st.set_page_config(
-    page_title="Tech Support Toolkit",
+    page_title="Level 1 Tech Support Toolkit",
     page_icon="🔧",
     layout="wide"
 )
 
-# Sidebar Configuration
+# --- SIDEBAR NAVIGATION ---
 st.sidebar.title("🔧 Support Tools")
 tool = st.sidebar.radio(
     "Select Tool:",
-    ["Domain Check", "IP Lookup", "My IP", "DNS Records", "SSL Check"]
+    [
+        "Identity & Verification", 
+        "Client Area IP Unban Tool", 
+        "DNS Records", 
+        "Domain WHOIS Check", 
+        "IP Lookup", 
+        "cPanel Hosting Checker", 
+        "My IP Finder", 
+        "Nameserver Bulk Updater", 
+        "SSL Check", 
+        "HostAfrica Knowledgebase"
+    ]
 )
 
 st.sidebar.divider()
 
-# --- IMPROVED SUPPORT CHECKLIST ---
+# --- SIDEBAR CHECKLIST (From Second File) ---
 with st.sidebar.expander("📋 Support Checklist", expanded=True):
-    st.markdown("### 1. Identity & Verification")
-    st.page_link("https://my.hostafrica.com/admin/admin_tool/client-pin", label="Client PIN: HostAfrica Admin", icon="🔐")
-    st.page_link("https://help.hostafrica.com", label="HostAfrica Help Center", icon="📚")
-    st.markdown("### 2. cPanel Hosting Checker")
-    st.info("Use the **Domain Check** tool for cPanel")
-    st.page_link("https://my.hostafrica.com/admin/custom/scripts/custom_tests/listaccounts.php", label="cPanel Account Checker", icon="📂")
-    st.info("Use the **Nameserver** Bulk Updater")
-    st.page_link("https://my.hostafrica.com/admin/addonmodules.php?module=nameserv_changer", label="Bulk Nameserver Changer", icon="🔄")
-    st.markdown("### 3. Connection & IP")
-    st.page_link("https://my.hostafrica.com/admin/custom/scripts/unban/", label="IP Unban Tool", icon="🔓")
+    st.markdown("""
+    ### Quick Start (60 sec)
+    1. ✅ Check priority (VIP?)
+    2. ✅ Confirm identity (PIN if guest)
+    3. ✅ Check service status
+    4. ✅ Add tags
+    
+    ### Service Health Check
+    - **Domain**: Active? Expired?
+    - **Hosting**: Active/Suspended?
+    - **Nameservers**: Correct NS?
+      - cPanel: ns1-ns4.host-ww.net
+      - DirectAdmin: dan1-dan2.host-ww.net
+    
+    ### Troubleshooting
+    **Email Issues:**
+    - Check MX/SPF/DKIM/DMARC
+    - Check if IP blocked
+    
+    **Website Issues:**
+    - Verify A record
+    - Check .htaccess / Error logs
+    """)
     st.page_link("https://dns.google/cache", label="Flush Google DNS Cache", icon="🧹")
 
 st.sidebar.divider()
+st.sidebar.caption("💡 Tip: Use checklist while working tickets")
 
-# Main App Logic
+# --- MAIN APP LOGIC ---
 st.title("Level 1 Tech Support Toolkit")
-st.markdown("Direct diagnostic tools for HostAfrica Support Agents")
+st.markdown(f"**Current Tool:** {tool}")
 
-if tool == "Domain Check":
-    st.header("🌐 Domain & WHOIS Lookup")
-    domain = st.text_input("Enter domain name (e.g., hostafrica.com):")
-    
+# 1. Identity & Verification
+if tool == "Identity & Verification":
+    st.header("🔐 Identity & Verification")
+    st.info("Verify the client using the HostAfrica Admin internal tools.")
+    st.page_link("https://my.hostafrica.com/admin/admin_tool/client-pin", label="Open Client PIN Verifier", icon="🔑")
+    st.markdown("""
+    **Standard Verification Procedure:**
+    - Request the Support PIN from the client.
+    - Match the PIN in the Admin portal.
+    - If PIN is unavailable, verify via registered email address.
+    """)
+
+# 2. IP Unban Tool
+elif tool == "Client Area IP Unban Tool":
+    st.header("🔓 Client Area IP Unban")
+    st.markdown("Use this tool to check for and remove firewall blocks on client IPs.")
+    st.page_link("https://my.hostafrica.com/admin/custom/scripts/unban/", label="Go to Unban Tool", icon="🛡️")
+
+# 3. DNS Records
+elif tool == "DNS Records":
+    st.header("🗂️ Detailed DNS Analysis")
+    domain = st.text_input("Enter domain:", placeholder="hostafrica.com").strip().lower()
+    if domain:
+        with st.spinner("Analyzing DNS..."):
+            # A Record Check
+            res = requests.get(f"https://dns.google/resolve?name={domain}&type=A").json()
+            if "Answer" in res:
+                st.subheader("🌐 A Records")
+                for r in res["Answer"]:
+                    st.code(r["data"])
+            
+            # MX Record Check
+            mx_res = requests.get(f"https://dns.google/resolve?name={domain}&type=MX").json()
+            if "Answer" in mx_res:
+                st.subheader("📧 MX Records")
+                for r in mx_res["Answer"]:
+                    st.code(r["data"])
+            
+            # TXT Records
+            txt_res = requests.get(f"https://dns.google/resolve?name={domain}&type=TXT").json()
+            if "Answer" in txt_res:
+                st.subheader("📝 TXT Records (SPF/DKIM)")
+                for r in txt_res["Answer"]:
+                    st.code(r["data"])
+
+# 4. Domain WHOIS Check
+elif tool == "Domain WHOIS Check":
+    st.header("🌐 Domain WHOIS Lookup")
+    domain = st.text_input("Enter domain name:").strip().lower()
     if domain:
         try:
-            with st.spinner('Fetching WHOIS data...'):
+            with st.spinner('Fetching WHOIS...'):
                 w = whois.whois(domain)
-                
                 col1, col2 = st.columns(2)
                 with col1:
-                    st.subheader("Registrar Info")
                     st.write(f"**Registrar:** {w.registrar}")
-                    st.write(f"**Creation Date:** {w.creation_date}")
-                    st.write(f"**Expiry Date:** {w.expiration_date}")
-                
+                    st.write(f"**Expiry:** {w.expiration_date}")
                 with col2:
-                    st.subheader("Nameservers")
+                    st.write("**Nameservers:**")
                     st.write(w.name_servers)
-
-                st.divider()
-                with st.expander("View Full Raw WHOIS Data"):
+                with st.expander("View Raw WHOIS"):
                     st.code(w.text)
-                    
         except Exception as e:
-            st.error(f"Error fetching WHOIS: {e}")
-            
-elif tool == "My IP":
+            st.error(f"WHOIS Error: {e}")
+
+# 5. IP Lookup
+elif tool == "IP Lookup":
+    st.header("🔍 IP Address Geo-Lookup")
+    ip_input = st.text_input("Enter IP Address:")
+    if ip_input:
+        res = requests.get(f"https://ipapi.co/{ip_input}/json/").json()
+        if "error" not in res:
+            st.json(res)
+        else:
+            st.error("Invalid IP.")
+
+# 6. cPanel Hosting Checker
+elif tool == "cPanel Hosting Checker":
+    st.header("📂 cPanel Account Checker")
+    st.page_link("https://my.hostafrica.com/admin/custom/scripts/custom_tests/listaccounts.php", label="Open cPanel Account List", icon="📂")
+
+# 7. My IP Finder
+elif tool == "My IP Finder":
     st.header("📍 Find My IP Address")
-    st.markdown("Discover your public IP address and network information")
-    
-    st.info("💡 Click the button below to open a new tab that will show your real public IP address")
-    
     st.markdown("""
     <div style="text-align: center; padding: 20px;">
-        <a href="https://ip.hostafrica.com/" target="_blank" style="
-            display: inline-block;
-            padding: 15px 40px;
-            background-color: #FF4B4B;
-            color: white;
-            text-decoration: none;
-            border-radius: 8px;
-            font-size: 18px;
-            font-weight: bold;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        ">
+        <a href="https://ip.hostafrica.com/" target="_blank" style="display: inline-block; padding: 15px 40px; background-color: #FF4B4B; color: white; text-decoration: none; border-radius: 8px; font-weight: bold;">
             🔍 Get My IP Address
         </a>
     </div>
     """, unsafe_allow_html=True)
-    
-    st.markdown("""
-    <div style="text-align: center; margin-top: 10px; color: #666;">
-        <small>Click the button above to open a trusted IP detection site in a new tab</small>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    st.divider()
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.markdown("""
-        **What this does:**
-        - Opens a trusted IP detection site
-        - Shows your real public IP address
-        - No server-side detection needed
-        """)
-    
-    with col2:
-        st.markdown("""
-        **Alternative Sites:**
-        - [IPChicken.com](https://ipchicken.com/)
-        - [IPInfo.io](https://ipinfo.io/)
-        - [ICanHazIP.com](https://icanhazip.com/)
-        """)
-    
-    st.divider()
-    
-    st.subheader("🔎 Already know your IP?")
-    st.markdown("Copy your IP address from the opened tab and use the **IP Lookup** tool in the sidebar to get detailed information about it!")
-    
-    st.markdown("""
-    ### Quick Steps:
-    1. ✅ Click "Get My IP Address" button above
-    2. ✅ Copy your IP address from the opened page
-    3. ✅ Go to **IP Lookup** tool (in sidebar)
-    4. ✅ Paste your IP and click "Lookup IP"
-    """)
+    st.info("Click the button above to open the HostAfrica IP detector in a new tab.")
 
-elif tool == "IP Lookup":
-    st.header("🔍 IP Address Lookup")
-    ip_input = st.text_input("Enter IP Address:")
-    if ip_input:
-        response = requests.get(f"https://ipapi.co/{ip_input}/json/").json()
-        if "error" not in response:
-            st.json(response)
-        else:
-            st.error("Invalid IP or API limit reached.")
+# 8. Nameserver Bulk Updater
+elif tool == "Nameserver Bulk Updater":
+    st.header("🔄 Bulk Nameserver Updater")
+    st.page_link("https://my.hostafrica.com/admin/addonmodules.php?module=nameserv_changer", label="Open NS Changer Module", icon="🔄")
 
-
-elif tool == "DNS Records":
-    st.header("🗂️ DNS Record Analyzer")
-    
-    domain_dns = st.text_input("Enter domain for DNS check:")
-    record_types = ['A', 'MX', 'TXT', 'CNAME', 'NS']
-    
-    if domain_dns:
-        for r_type in record_types:
-            st.subheader(f"{r_type} Records")
-            try:
-                # Note: In a real production app, use 'dnspython' library here
-                # Simplified example for logic flow:
-                st.info(f"Checking {r_type} records for {domain_dns}...")
-            except Exception as e:
-                st.error(f"Could not retrieve {r_type} records.")
-
+# 9. SSL Check
 elif tool == "SSL Check":
     st.header("🔒 SSL Certificate Check")
-    domain_ssl = st.text_input("Enter domain for SSL check (e.g., hostafrica.com):")
+    domain_ssl = st.text_input("Enter domain (e.g., hostafrica.com):").strip().lower()
     if domain_ssl:
         try:
             context = ssl.create_default_context()
-            with socket.create_connection((domain_ssl, 443)) as sock:
+            with socket.create_connection((domain_ssl, 443), timeout=5) as sock:
                 with context.wrap_socket(sock, server_hostname=domain_ssl) as ssock:
                     cert = ssock.getpeercert()
-                    st.success(f"✅ SSL Certificate is Valid for {domain_ssl}")
+                    st.success(f"✅ SSL Valid for {domain_ssl}")
                     st.json(cert)
         except Exception as e:
             st.error(f"SSL Check Failed: {e}")
+
+# 10. HostAfrica Knowledgebase
+elif tool == "HostAfrica Knowledgebase":
+    st.header("📚 HostAfrica Help Center")
+    st.page_link("https://help.hostafrica.com", label="Search Knowledgebase", icon="📚")
