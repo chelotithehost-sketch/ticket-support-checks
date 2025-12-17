@@ -13,11 +13,71 @@ st.set_page_config(
     layout="wide"
 )
 
+# Sidebar
 st.sidebar.title("🔧 Support Tools")
 tool = st.sidebar.radio(
     "Select Tool:",
     ["Domain Check", "My IP", "IP Lookup", "DNS Records", "SSL Check"]
 )
+
+st.sidebar.divider()
+
+# Add Support Checklist in sidebar
+with st.sidebar.expander("📋 Support Checklist", expanded=False):
+    st.markdown("""
+    ### Quick Start (60 sec)
+    1. ✅ Check priority (VIP?)
+    2. ✅ Confirm identity (PIN if guest)
+    3. ✅ Check service status
+    4. ✅ Add tags
+    5. ✅ Troubleshoot
+    
+    ### Service Health Check
+    - **Domain**: Active? Expired?
+    - **Hosting**: Active/Suspended/Terminated?
+    - **Nameservers**: Correct NS?
+      - cPanel: ns1-ns4.host-ww.net
+      - DirectAdmin: dan1-dan2.host-ww.net
+    
+    ### Troubleshooting
+    **Email Issues:**
+    - Check MX/SPF/DKIM/DMARC
+    - Check if IP blocked
+    - Review email logs
+    
+    **Website Issues:**
+    - Verify A record
+    - Check redirects (.htaccess)
+    - Review error logs
+    - Check IP blocks
+    
+    **DNS Issues:**
+    - Verify domain registered
+    - Check domain status
+    - Confirm nameservers
+    
+    ### Tags
+    - Mail | Hosting | DNS | Billing
+    - VPS | Dedicated
+    - cPanel | DirectAdmin | HmailPlus
+    
+    ### Reply Template
+    Tell client:
+    - ✅ What you checked
+    - 🔍 What you found
+    - 🛠️ What you fixed
+    - 🧑‍💻 What they must do
+    - ⏭️ What happens next
+    
+    ### Escalate If:
+    - Server offline
+    - Security breach
+    - Beyond knowledge
+    - >30 min no progress
+    """)
+
+st.sidebar.divider()
+st.sidebar.caption("💡 Tip: Use checklist while working tickets")
 
 st.title("Level 1 Tech Support Toolkit")
 st.markdown("Essential diagnostic tools for first-line support")
