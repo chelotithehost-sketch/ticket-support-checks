@@ -376,42 +376,72 @@ elif tool == "DNS":
     if st.button("Analyze", use_container_width=True):
         if domain:
             with st.spinner("Analyzing..."):
-                st.subheader("🌐 A Records")
-                try:
-                    a = requests.get(f"https://dns.google/resolve?name={domain}&type=A", timeout=5).json()
-                    if a.get('Answer'):
-                        for r in a['Answer']:
-                            st.code(f"A: {r['data']}")
-                    else:
-                        st.error("❌ No A records")
-                except:
-                    st.error("Error")
+                # --- A & AAAA RECORDS ---
+            st.subheader("🌐 Web Resolution (A/AAAA)")
+            a_res = requests.get(f"https://dns.google/resolve?name={domain_dns}&type=A").json()
+            if a_res.get('Answer'):
+                for r in a_res['Answer']: st.code(f"A: {r['data']}")
+                success_checks.append("A record found")
+            else:
+                issues.append("Missing A record (Website won't load)")
+                st.error("❌ No A records found.")
 
-                st.subheader("📧 MX Records")
-                try:
-                    mx = requests.get(f"https://dns.google/resolve?name={domain}&type=MX", timeout=5).json()
-                    if mx.get('Answer'):
-                        for r in mx['Answer']:
-                            st.code(f"MX: {r['data']}")
-                    else:
-                        st.error("❌ No MX")
-                except:
-                    pass
+            # --- MX RECORDS (Mail) ---
+            st.subheader("📧 Mail Server Records (MX)")
+            mx_res = requests.get(f"https://dns.google/resolve?name={domain_dns}&type=MX").json()
+            if mx_res.get('Answer'):
+                for r in mx_res['Answer']: st.code(f"MX: {r['data']}")
+                success_checks.append("MX records configured")
+            else:
+                issues.append("No MX records (Cannot receive email)")
+                st.error("❌ No MX records found. Client cannot receive emails.")
 
-                st.subheader("🖥️ Nameservers")
-                try:
-                    ns = requests.get(f"https://dns.google/resolve?name={domain}&type=NS", timeout=5).json()
-                    if ns.get('Answer'):
-                        for r in ns['Answer']:
-                            n = r['data'].rstrip('.')
-                            st.code(f"NS: {n}")
-                            if 'host-ww.net' in n:
-                                st.caption("✅ HostAfrica NS")
-                    else:
-                        st.error("❌ No NS")
-                except:
-                    pass
+            # --- CNAME RECORDS ---
+            st.subheader("🔗 Alias Records (CNAME)")
+            # Checking 'www' by default as it's the most common support query
+            cname_res = requests.get(f"https://dns.google/resolve?name=www.{domain_dns}&type=CNAME").json()
+            if cname_res.get('Answer'):
+                for r in cname_res['Answer']: st.code(f"www CNAME: {r['data']}")
+                success_checks.append("www CNAME found")
+            else:
+                st.info("ℹ️ No CNAME found for 'www' (might be using an A record instead).")
 
+            # --- TXT RECORDS (SPF/DKIM/DMARC) ---
+            st.subheader("📝 Text Records (Authentication)")
+            txt_res = requests.get(f"https://dns.google/resolve?name={domain_dns}&type=TXT").json()
+            if txt_res.get('Answer'):
+                found_spf = False
+                for r in txt_res['Answer']:
+                    val = r['data'].strip('"')
+                    st.code(f"TXT: {val}")
+                    if "v=spf1" in val: found_spf = True
+                
+                if found_spf:
+                    success_checks.append("SPF record found")
+                else:
+                    warnings.append("No SPF record found (Email might go to spam)")
+            else:
+                warnings.append("No TXT records found")
+                st.warning("⚠️ No TXT records. Missing SPF/DMARC will affect email deliverability.")
+
+            # --- NAMESERVERS ---
+            st.subheader("🖥️ Nameservers (NS)")
+            ns_res = requests.get(f"https://dns.google/resolve?name={domain_dns}&type=NS").json()
+            if ns_res.get('Answer'):
+                for r in ns_res['Answer']: st.code(f"NS: {r['data'].rstrip('.')}")
+            else:
+                issues.append("No Nameservers found")
+
+            # --- Summary Report ---
+            st.divider()
+            st.subheader("📊 DNS Health Summary")
+            col_a, col_b = st.columns(2)
+            with col_a:
+                for msg in issues: st.error(f"• {msg}")
+                for msg in warnings: st.warning(f"• {msg}")
+            with col_b:
+                for msg in success_checks: st.success(f"• {msg}")
+                    
 elif tool == "WHOIS":
     st.header("🌐 WHOIS")
     domain = st.text_input("Domain:", placeholder="example.com")
